@@ -1,0 +1,23 @@
+{
+  "name": "appsync_api-gen",
+  "module": "main.ts",
+  "devDependencies": {
+    "@aws-amplify/backend": "^1.0.4",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "start": "bun --bun main.ts",
+    "build:windows": "bun build --compile --minify --sourcemap --target=bun-windows-x64-modern ./main.ts --outfile ./build/appsync_api-gen",
+    "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-x64-modern ./main.ts --outfile ./build/appsync_api-gen",
+    "build:darwin": "bun build --compile --minify --sourcemap --target=bun-darwin-x64 ./main.ts --outfile ./build/appsync_api-gen",
+    "test:json": "bun start -- -o ./test/output.ts ./test/stripe.openapi.json --overwrite",
+    "test:yaml": "bun start -- -o ./test/output.ts ./test/stripe.openapi.yml --overwrite"
+  },
+  "type": "module",
+  "dependencies": {
+    "yaml": "^2.4.5"
+  }
+}
