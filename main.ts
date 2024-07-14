@@ -1,7 +1,7 @@
 import { parseArgs } from 'util';
 import { normalize } from 'path';
 import { unlinkSync } from 'fs';
-import { isSupported, printUsage, toAppsyncDef } from './lib';
+import { isSupported, exitWithUsage, toAmplifyDataDef } from './lib';
 import type { OpenAPISpecV3 } from './openapi.types';
 
 try {
@@ -18,7 +18,7 @@ try {
     },
     allowPositionals: true
   });
-  if (help) printUsage();
+  if (help || Bun.argv.length === 2) exitWithUsage();
   if (!input) throw 'Error: No input file specified';
   if (!output) throw 'Error: No output file specified';
   let outputFile = Bun.file(normalize(output));
@@ -36,7 +36,7 @@ try {
   const schemas = Object.entries(apiSpec.components?.schemas || {});
   const components = new Map(schemas);
   const writer = outputFile.writer();
-  await toAppsyncDef(writer, components, include?.split(','));
+  await toAmplifyDataDef(writer, components, include?.split(','));
   process.exit(0);
 } catch (e) {
   console.error(e);

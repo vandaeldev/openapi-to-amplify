@@ -1,5 +1,5 @@
 {
-  "name": "appsync_api-gen",
+  "name": "openapi-to-amplify",
   "module": "main.ts",
   "devDependencies": {
     "@aws-amplify/backend": "^1.0.4",
@@ -10,14 +10,19 @@
   },
   "scripts": {
     "start": "bun --bun main.ts",
-    "build:windows": "bun build --compile --minify --sourcemap --target=bun-windows-x64-modern ./main.ts --outfile ./build/appsync_api-gen",
-    "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-x64-modern ./main.ts --outfile ./build/appsync_api-gen",
-    "build:darwin": "bun build --compile --minify --sourcemap --target=bun-darwin-x64 ./main.ts --outfile ./build/appsync_api-gen",
-    "test:json": "bun start -- -o ./test/output.ts ./test/stripe.openapi.json --overwrite",
-    "test:yaml": "bun start -- -o ./test/output.ts ./test/stripe.openapi.yml --overwrite"
+    "build:windows": "bun build --compile --minify --sourcemap --target=bun-windows-x64-modern ./main.ts --outfile ./build/OpenAPI-To-Amplify",
+    "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-x64-modern ./main.ts --outfile ./build/openapi-to-amplify",
+    "build:darwin": "bun build --compile --minify --sourcemap --target=bun-darwin-x64 ./main.ts --outfile ./build/openapi-to-amplify",
+    "test:json": "bun start -- -o ./test/json-test-output.ts ./test/stripe.openapi.json --overwrite",
+    "test:yaml": "bun start -- -o ./test/yaml-test-output.ts ./test/stripe.openapi.yml --overwrite"
   },
   "type": "module",
   "dependencies": {
     "yaml": "^2.4.5"
-  }
+  },
+  "version": "1.0.0",
+  "author": "Dominic van Dael <vandael.dev@gmail.com>",
+  "license": "MIT",
+  "description": "Outputs an AWS Amplify Gen 2 Data schema file from an OpenAPI v3 specification",
+  "keywords": ["openapi", "amplify", "gen2"]
 }

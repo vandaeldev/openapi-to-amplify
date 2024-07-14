@@ -6,9 +6,9 @@ const componentMap = new Map<string, OpenAPISpecV3Schema>();
 const subComponentMap = new Map<string, OpenAPISpecV3Schema>();
 const enumMap = new Map<string, string[]>();
 
-export const printUsage = () => {
+export const exitWithUsage = () => {
   console.log(`
-Usage: bun --bun main.ts <inputFilePath> -o <outputFilePath> [options]
+Usage: openapi-to-amplify <inputFilePath> -o <outputFilePath> [options]
 
 Options:
   --overwrite                  Overwrite the output file if it already exists
@@ -44,7 +44,7 @@ export const parseStringProp = (name: string, prop: OpenAPISpecV3Property, compo
   return 'string()';
 }
 
-export const parseNumberProp = ({ format }: OpenAPISpecV3Property) => format === 'unix-time' ? 'timestamp()' : 'integer()';
+export const parseIntegerProp = ({ format }: OpenAPISpecV3Property) => format === 'unix-time' ? 'timestamp()' : 'integer()';
 
 export const parseArrayProp = (name: string, { items }: OpenAPISpecV3Property, componentName: string) => `${parsePropType(name, items!, componentName)}.array()`;
 
@@ -52,8 +52,8 @@ export const parsePropType = (name: string, prop: OpenAPISpecV3Property, compone
   if ('$ref' in prop) return parseRef(prop.$ref);
   else switch (prop.type) {
     case 'string': return parseStringProp(name, prop, componentName);
-    case 'integer':
-    case 'number': return parseNumberProp(prop);
+    case 'integer': return parseIntegerProp(prop);
+    case 'number': return `float()`;
     case 'boolean': return 'boolean()';
     case 'array': return parseArrayProp(name, prop, componentName);
     default: return `json()`;
@@ -159,7 +159,7 @@ export const setComponents = async (cMap: Map<string, OpenAPISpecV3Schema>, incl
   if (!!includeList?.length) componentMap.forEach(value => setRefs(value, cMap));
 };
 
-export const toAppsyncDef = async <T extends Map<string, OpenAPISpecV3Schema>>(
+export const toAmplifyDataDef = async <T extends Map<string, OpenAPISpecV3Schema>>(
   writer: FileSink,
   cMap: T,
   includeList?: string[]
