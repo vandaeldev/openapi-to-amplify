@@ -5,6 +5,8 @@ import type { OpenAPISpecV3Property } from './lib.types';
 const componentMap = new Map<string, OpenAPISpecV3Schema>();
 const subComponentMap = new Map<string, OpenAPISpecV3Schema>();
 const enumMap = new Map<string, string[]>();
+const invalidEnumRegex = /-|\./;
+const reservedNames = ['subscription', 'query', 'mutation'];
 
 export const exitWithUsage = () => {
   console.log(`
@@ -18,12 +20,10 @@ Options:
   process.exit(0);
 };
 
-export const snakeToPascal = (str: string) =>
-  str
-    .replace(/\./g, '')
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
+export const snakeToPascal = (str: string) => {
+  let name = reservedNames.includes(str.toLowerCase()) ? `${str}_type` : str;
+  return name.replace(/\./g, '_').split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+}
 
 export const isSupported = (fileType: string, supported: string[] = []) => supported.includes(fileType.split(';')[0]);
 
@@ -31,11 +31,13 @@ export const sorted = <T extends Map<string, any>>(map: T) => new Map([...map.en
 
 export const parseRef = (ref: OpenAPISpecV3Property['$ref']) => {
   const component = ref?.split('/').pop()!;
-  return `ref('${snakeToPascal(component)}')`;
+  const componentName = snakeToPascal(component);
+  if (!componentMap.has(component) && !subComponentMap.has(component)) return 'json()';
+  return `ref('${componentName}')`;
 };
 
 export const parseStringProp = (name: string, prop: OpenAPISpecV3Property, componentName: string) => {
-  if (!!prop.enum) {
+  if (!!prop.enum && !prop.enum.some(e => invalidEnumRegex.test(e))) {
     if (name === 'object') return `enum([${prop.enum.map(e => `'${e}'`)}])`;
     const enumName = `${componentName}${snakeToPascal(name)}Enum`;
     if (!enumMap.has(enumName)) enumMap.set(enumName, prop.enum);
@@ -92,17 +94,15 @@ export const mapComponent = (writer: FileSink, value: OpenAPISpecV3Schema, key: 
   if (!value.properties) return;
   const componentName = snakeToPascal(key);
   const propList = Object.entries<OpenAPISpecV3Property>(value.properties);
-  if (!propList.length) writer.write(`\t${componentName}: a.json(),\n`);
-  else {
-    writer.write(`\t${componentName}: a.customType({\n`);
-    propList.forEach(([ name, body ]) => {
-      writer.write(`\t\t${name}: `);
-      const isRequired = value.required?.includes(name);
-      const prop = toAppsyncProp(name, body, isRequired, componentName);
-      writer.write(`${prop},\n`);
-    });
-    writer.write('\t}),\n');
-  }
+  if (!propList.length) return;
+  writer.write(`\t${componentName}: a.customType({\n`);
+  propList.forEach(([ name, body ]) => {
+    writer.write(`\t\t${name}: `);
+    const isRequired = value.required?.includes(name);
+    const prop = toAppsyncProp(name, body, isRequired, componentName);
+    writer.write(`${prop},\n`);
+  });
+  writer.write('\t}),\n');
 };
 
 export const mapComponents = async (writer: FileSink) => {
@@ -130,8 +130,10 @@ export const mapEnums = async (writer: FileSink) => {
 };
 
 export const addToMap = (component: string, cMap: Map<string, OpenAPISpecV3Schema>) => {
-  if (!subComponentMap.has(component) && !componentMap.has(component)) subComponentMap.set(component, cMap.get(component)!);
-  setRefs(cMap.get(component)!, cMap);
+  const subComponent = cMap.get(component);
+  if (!Object.keys(subComponent?.properties || {}).length) return;
+  if (!subComponentMap.has(component) && !componentMap.has(component)) subComponentMap.set(component, subComponent!);
+  setRefs(subComponent!, cMap);
 };
 
 export const setRefs = (value: OpenAPISpecV3Schema, cMap: Map<string, OpenAPISpecV3Schema>) => {
